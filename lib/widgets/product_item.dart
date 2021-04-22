@@ -7,7 +7,6 @@ import 'package:shopping_app/pages/product_details_page.dart';
 class ProductItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-
     final product = Provider.of<Product>(context, listen: false);
     final cart = Provider.of<Cart>(context, listen: false);
 
@@ -27,7 +26,8 @@ class ProductItem extends StatelessWidget {
           backgroundColor: Colors.black87,
           leading: Consumer<Product>(
             builder: (ctx, product, child) => IconButton(
-              icon: Icon(product.isFavourite ? Icons.favorite : Icons.favorite_border),
+              icon: Icon(
+                  product.isFavourite ? Icons.favorite : Icons.favorite_border),
               color: Theme.of(context).accentColor,
               onPressed: () {
                 product.toggleFavouriteStatus();
@@ -40,6 +40,17 @@ class ProductItem extends StatelessWidget {
             color: Theme.of(context).accentColor,
             onPressed: () {
               cart.addItem(product);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    "Added item to cart!",
+                  ),
+                  duration: Duration(
+                    seconds: 2,
+                  ),
+                  action: SnackBarAction(label: "Undo the action", onPressed: () => cart.removeLastAddedItem(product.id)),
+                ),
+              );
             },
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shopping_app/providers/cart.dart';
+import 'package:shopping_app/providers/orders.dart';
 import 'package:shopping_app/widgets/cart_item.dart';
 
 class CartPage extends StatelessWidget {
@@ -35,6 +36,18 @@ class CartPage extends StatelessWidget {
                     ),
                     backgroundColor: Theme.of(context).primaryColorDark,
                   ),
+                  TextButton(
+                    onPressed: () {
+                      Provider.of<Orders>(context, listen: false).addOrder(
+                        cart.items.values.toList(),
+                        cart.total,
+                      );
+                      cart.clear();
+                    },
+                    child: Text("Order All"),
+                    style: TextButton.styleFrom(
+                        primary: Theme.of(context).primaryColorDark),
+                  ),
                 ],
               ),
             ),
@@ -44,7 +57,8 @@ class CartPage extends StatelessWidget {
           ),
           Expanded(
             child: ListView.builder(
-              itemBuilder: (ctx, i) => CartItemWidget(cart.items.values.toList()[i]),
+              itemBuilder: (ctx, i) =>
+                  CartItemWidget(cart.items.values.toList()[i]),
               itemCount: cart.numberOfItems,
             ),
           ),

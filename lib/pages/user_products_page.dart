@@ -22,17 +22,20 @@ class UserProductPage extends StatelessWidget {
         ],
       ),
       drawer: AppDrawer(),
-      body: Padding(
-        padding: const EdgeInsets.all(10),
-        child: ListView.builder(
-          itemBuilder: (_, i) => Column(
-            children: [
-              UserProductItem(
-                  products.products[i].id, products.products[i].title, products.products[i].imageUrl),
-              Divider(),
-            ],
+      body: RefreshIndicator(
+        onRefresh: () { return Provider.of<ProductProvider>(context, listen: false).fetchProducts();},
+          child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: ListView.builder(
+            itemBuilder: (_, i) => Column(
+              children: [
+                UserProductItem(
+                    products.products[i].id, products.products[i].title, products.products[i].imageUrl),
+                Divider(),
+              ],
+            ),
+            itemCount: products.products.length,
           ),
-          itemCount: products.products.length,
         ),
       ),
     );

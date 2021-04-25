@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shopping_app/providers/product.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class ProductProvider with ChangeNotifier{
-  List<Product> _products = [
+class ProductProvider with ChangeNotifier {
+  List<Product> _products = [];
+  /*= [
     Product(
       id: 'p1',
       title: 'Red Shirt',
@@ -36,7 +39,7 @@ class ProductProvider with ChangeNotifier{
           'https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Cast-Iron-Pan.jpg/1024px-Cast-Iron-Pan.jpg',
     ),
   ];
-
+*/
 
   List<Product> get products {
     //if(_showfavourites) return _products.where((element) => element.isFavourite).toList();
@@ -57,32 +60,112 @@ class ProductProvider with ChangeNotifier{
     notifyListeners();
   }*/
 
-  void addProduct(Product product){
-    var newProduct = Product(
-                      id: DateTime.now().toString(),
-                      description: product.description,
-                      imageUrl: product.imageUrl,
-                      isFavourite: false,
-                      price: product.price,
-                      title: product.title,
-                    );
-    _products.add(newProduct);
-    notifyListeners();
+  Future<void> fetchProducts() async {
+    try {
+      final url = Uri.https(
+          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
+          '/products.json');
+      var response = await http.get(url);
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      List<Product> products = [];
+
+      data.forEach((key, prod) {
+        products.add(Product(
+          id: key,
+          title: prod['title'],
+          description: prod['description'],
+          imageUrl: prod['imageUrl'],
+          price: prod['price'],
+          isFavourite: prod['isFavourite'],
+        ));
+      });
+      _products = products;
+      notifyListeners();
+    } catch (error) {
+      print(error.toString());
+      throw error;
+    }
   }
 
-  void updateProduct(Product product){
-    final index = _products.indexWhere((element) => element.id == product.id);
-    _products[index] = product;
-    notifyListeners();
+  Future<void> addProduct(Product product) async {
+    try {
+      final url = Uri.https(
+          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
+          '/products.json');
+      var response = await http.post(url,
+          body: json.encode({
+            'description': product.description,
+            'imageUrl': product.imageUrl,
+            'price': product.price,
+            'title': product.title,
+          }));
+
+      var newProduct = Product(
+        id: json.decode(response.body)['name'],
+        description: product.description,
+        imageUrl: product.imageUrl,
+        isFavourite: false,
+        price: product.price,
+        title: product.title,
+      );
+      _products.add(newProduct);
+      notifyListeners();
+    } catch (error) {
+      print(error.toString());
+      return error;
+    }
   }
 
-  void deleteProduct(String id){
-    _products.removeWhere((element) => element.id == id);
-    notifyListeners();
+  Future<void> updateProduct(Product product) async{
+    final url = Uri.https(
+          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
+          '/products'
+          '/${product.id}.json');
+
+    try {
+      await http.patch(url,
+          body: json.encode({
+            'description': product.description,
+            'imageUrl': product.imageUrl,
+            'price': product.price,
+            'title': product.title,
+          }));
+      final index = _products.indexWhere((element) => element.id == product.id);
+      _products[index] = product;
+      notifyListeners();
+
+    } catch (error) {
+      print(error.toString());
+      return error;
+    }
+    
   }
 
+  void deleteProduct(String id) {
+    final url = Uri.https(
+          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
+          '/products'
+          '/$id.json');
 
-  Product findById(String id){
+    final index = _products.indexWhere((element) => element.id == id);
+    var product = _products[index];
+
+    try {
+      _products.removeWhere((element) => element.id == id);
+      notifyListeners();
+
+      http.delete(url);
+
+    } catch (error) {
+      products.insert(index, product);
+      notifyListeners();
+      return error;
+    }
+    
+    
+  }
+
+  Product findById(String id) {
     return _products.firstWhere((element) => element.id == id);
   }
 }

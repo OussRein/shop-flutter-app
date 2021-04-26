@@ -27,10 +27,13 @@ class _ProductOverviewPageState extends State<ProductOverviewPage> {
     Provider.of<ProductProvider>(context, listen: false)
         .fetchProducts()
         .then((value) {
-      setState(() {
-        _isLoading = false;
-      });
+          
+            setState(() {
+              _isLoading = false;
+            });
     });
+    Provider.of<Cart>(context, listen: false)
+                .fetchCart();
     super.initState();
   }
 

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:shopping_app/providers/product.dart';
 import 'package:http/http.dart' as http;
@@ -18,28 +20,27 @@ class CartItem {
   CartItem.fromJson(Map<String, dynamic> json)
       : product = json['product'],
         id = json['id'],
-        quantity = json['quantity'], 
+        quantity = json['quantity'],
         price = json['price'];
 
   Map<String, dynamic> toJson() => {
-        'id' : id,
+        'id': id,
         'product': product,
         'price': price,
-        'quantity' : quantity,
+        'quantity': quantity,
       };
-
 }
 
 class Cart with ChangeNotifier {
   Map<String, CartItem> _items = {};
 
-  Cart.fromJson(Map<String, dynamic> json)
-      : _items = json['_items'];
+  Cart.fromJson(Map<String, dynamic> json) : _items = json['_items'];
 
-  Map<String, dynamic> toJson() => {
-        '_items' : _items};
+  Map<String, dynamic> toJson() => {'_items': _items};
 
-  Cart();
+  String _authToken;
+
+  Cart(_authToken, _items);
   Map<String, CartItem> get items {
     return _items;
   }
@@ -62,14 +63,17 @@ class Cart with ChangeNotifier {
         final url = Uri.https(
             'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
             '/cart'
-            '/${product.id}.json');
+                '/${product.id}.json');
 
-          await http.patch(url,
-            body: json.encode({
-              'product': product,
-              'price': product.price,
-              'quantity': _items[product.id].quantity + 1.0,
-            }));
+        await http.patch(
+          url,
+          body: json.encode({
+            'product': product,
+            'price': product.price,
+            'quantity': _items[product.id].quantity + 1.0,
+          }),
+          headers: {HttpHeaders.authorizationHeader: _authToken},
+        );
 
         _items.update(
             product.id,
@@ -98,22 +102,20 @@ class Cart with ChangeNotifier {
                 quantity: 1.0));
       }
     } catch (error) {
-      print (error);
+      print(error);
     }
 
     notifyListeners();
   }
-
-  
 
   void removeItem(String id) {
     if (!_items.containsKey(id)) {
       return;
     }
     final url = Uri.https(
-          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-          '/cart'
-          '/$id.json');
+        'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
+        '/cart'
+            '/$id.json');
 
     final cart = _items[id];
 
@@ -122,35 +124,31 @@ class Cart with ChangeNotifier {
       notifyListeners();
 
       http.delete(url);
-
     } catch (error) {
-       _items.putIfAbsent(
-            id,
-            () => cart );
+      _items.putIfAbsent(id, () => cart);
       notifyListeners();
       return error;
     }
   }
 
-  void removeLastAddedItem(String id) async{
+  void removeLastAddedItem(String id) async {
     if (!_items.containsKey(id)) {
       return;
     }
     if (_items[id].quantity > 1) {
-
       final url = Uri.https(
-            'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-            '/cart'
-            '/$id.json');
+          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
+          '/cart'
+              '/$id.json');
 
       final cart = _items[id];
 
-          await http.patch(url,
-            body: json.encode({
-              'product': cart.product,
-              'price': cart.price,
-              'quantity': cart.quantity - 1.0,
-            }));
+      await http.patch(url,
+          body: json.encode({
+            'product': cart.product,
+            'price': cart.price,
+            'quantity': cart.quantity - 1.0,
+          }));
 
       _items.update(
           id,
@@ -166,52 +164,51 @@ class Cart with ChangeNotifier {
   }
 
   void clear() {
-    var cart  = _items;
+    var cart = _items;
     try {
       _items.forEach((key, value) {
         var url = Uri.https(
             'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
             '/cart'
-            '/${value.id}.json');
-            http.delete(url);
-        });
-        _items = {};
-        notifyListeners();
-
+                '/${value.id}.json');
+        http.delete(url);
+      });
+      _items = {};
+      notifyListeners();
     } catch (error) {
       _items = cart;
       notifyListeners();
       return error;
-    }    
+    }
   }
 
   Future<void> fetchCart() async {
-    //try {
+    try {
       final url = Uri.https(
           'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
           '/cart.json');
-      var response = await http.get(url);
+      var response = await http.get(url, headers: {HttpHeaders.authorizationHeader: _authToken});
       final data = json.decode(response.body) as Map<String, dynamic>;
-      
+
       Map<String, CartItem> cart = {};
       if (data != null) {
         data.forEach((key, prod) {
           cart.putIfAbsent(
-            key,
-            () => CartItem(
-                  id: key,
-                  price: prod['price'],
-                  product: Product.fromJson(prod['product']),
-                  quantity: double.parse('${prod['quantity']}'),
-                ));
+              key,
+              () => CartItem(
+                    id: key,
+                    price: double.parse(prod['price']),
+                    product: Product.fromJson(prod['product']),
+                    quantity: double.parse('${prod['quantity']}'),
+                  ));
         });
       }
-      
+
       _items = cart;
       notifyListeners();
-    /*} catch (error) {
+    } catch (error) {
       print(error.toString());
-      throw error;
-    }*/
+      return error;
+    }
   }
 }

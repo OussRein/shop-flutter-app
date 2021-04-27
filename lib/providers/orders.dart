@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:shopping_app/providers/cart.dart';
 import 'package:http/http.dart' as http;
@@ -38,6 +40,10 @@ class Orders with ChangeNotifier {
     return [..._orders];
   }
 
+  String _authToken;
+
+  Orders(_authToken, _orders);
+
   void addOrder(List<CartItem> cartItems, double total) async {
     try {
       final url = Uri.https(
@@ -76,12 +82,12 @@ class Orders with ChangeNotifier {
   }
 
   Future<void> fetchOrders() async {
-    //try {
+    try {
     final url = Uri.https(
         'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
         '/orders.json');
 
-    var response = await http.get(url);
+    var response = await http.get(url, headers: {HttpHeaders.authorizationHeader: _authToken});
     final data = json.decode(response.body) as Map<String, dynamic>;
 
     List<OrderItem> orders = [];
@@ -105,9 +111,9 @@ class Orders with ChangeNotifier {
 
     _orders= orders;
     notifyListeners();
-    /*} catch (error) {
-      print(error.toString());
-      throw error;
-    }*/
+    } catch (error) {
+      print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+      return error;
+    }
   }
 }

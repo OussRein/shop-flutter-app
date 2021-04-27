@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:shopping_app/providers/product.dart';
 import 'package:http/http.dart' as http;
@@ -5,6 +7,10 @@ import 'dart:convert';
 
 class ProductProvider with ChangeNotifier {
   List<Product> _products = [];
+  String _authToken;
+
+  ProductProvider(this._authToken, this._products);
+
   /*= [
     Product(
       id: 'p1',
@@ -61,14 +67,15 @@ class ProductProvider with ChangeNotifier {
   }*/
 
   Future<void> fetchProducts() async {
-    try {
-      final url = Uri.https(
-          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-          '/products.json');
-      var response = await http.get(url);
-      final data = json.decode(response.body) as Map<String, dynamic>;
+    //try {
+      final url = Uri.parse(
+          'https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/products.json');
+      var response = await http.get(url, headers: {HttpHeaders.authorizationHeader: _authToken});
+      final data = json.decode(response.body);
+      print("WTF");
+      print("this is the data $data");
       List<Product> products = [];
-
+      if (data == null) return;
       data.forEach((key, prod) {
         products.add(Product(
           id: key,
@@ -81,10 +88,9 @@ class ProductProvider with ChangeNotifier {
       });
       _products = products;
       notifyListeners();
-    } catch (error) {
-      print(error.toString());
-      throw error;
-    }
+    /*} catch (error) {
+      return error;
+    }*/
   }
 
   Future<void> addProduct(Product product) async {

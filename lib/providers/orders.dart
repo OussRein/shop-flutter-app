@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:shopping_app/providers/cart.dart';
@@ -40,15 +39,19 @@ class Orders with ChangeNotifier {
     return [..._orders];
   }
 
-  String _authToken;
+  final String _authToken;
 
-  Orders(_authToken, _orders);
+  Orders(this._authToken, this._orders);
 
   void addOrder(List<CartItem> cartItems, double total) async {
     try {
+      var params = {
+      'auth': _authToken,
+      };
+      print(_authToken);
       final url = Uri.https(
           'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-          '/orders.json');
+          '/orders.json', params);
 
       DateTime dt = DateTime.now();
       var response = await http.post(url,
@@ -83,14 +86,21 @@ class Orders with ChangeNotifier {
 
   Future<void> fetchOrders() async {
     try {
-    final url = Uri.https(
-        'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-        '/orders.json');
+      print(_authToken);
+      var params = {
+      'auth': _authToken,
+      };
+      final url = Uri.https(
+          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
+          '/orders.json',
+          params
+          );
+      var response = await http.get(url);
+      final data = json.decode(response.body);
+      print("WTF orders");
+      print("this is the data $data");
 
-    var response = await http.get(url, headers: {HttpHeaders.authorizationHeader: _authToken});
-    final data = json.decode(response.body) as Map<String, dynamic>;
-
-    List<OrderItem> orders = [];
+      List<OrderItem> orders = [];
 
     if (data != null) {
       data.forEach((key, prod) {
@@ -112,7 +122,6 @@ class Orders with ChangeNotifier {
     _orders= orders;
     notifyListeners();
     } catch (error) {
-      print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
       return error;
     }
   }

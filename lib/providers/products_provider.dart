@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:shopping_app/providers/product.dart';
@@ -68,12 +67,16 @@ class ProductProvider with ChangeNotifier {
 
   Future<void> fetchProducts() async {
     //try {
-      final url = Uri.parse(
-          'https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/products.json');
-      var response = await http.get(url, headers: {HttpHeaders.authorizationHeader: _authToken});
+      var params = {
+      'auth': _authToken,
+      };
+      final url = Uri.https(
+          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
+          '/products.json',
+          params
+          );
+      var response = await http.get(url);
       final data = json.decode(response.body);
-      print("WTF");
-      print("this is the data $data");
       List<Product> products = [];
       if (data == null) return;
       data.forEach((key, prod) {
@@ -95,9 +98,12 @@ class ProductProvider with ChangeNotifier {
 
   Future<void> addProduct(Product product) async {
     try {
+      var params = {
+      'auth': _authToken,
+      };
       final url = Uri.https(
           'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-          '/products.json');
+          '/products.json', params);
       var response = await http.post(url,
           body: json.encode({
             'description': product.description,
@@ -123,10 +129,13 @@ class ProductProvider with ChangeNotifier {
   }
 
   Future<void> updateProduct(Product product) async{
+    var params = {
+      'auth': _authToken,
+      };
     final url = Uri.https(
           'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
           '/products'
-          '/${product.id}.json');
+          '/${product.id}.json', params);
 
     try {
       await http.patch(url,
@@ -148,10 +157,13 @@ class ProductProvider with ChangeNotifier {
   }
 
   void deleteProduct(String id) {
+    var params = {
+      'auth': _authToken,
+      };
     final url = Uri.https(
           'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
           '/products'
-          '/$id.json');
+          '/$id.json', params);
 
     final index = _products.indexWhere((element) => element.id == id);
     var product = _products[index];

@@ -40,18 +40,15 @@ class Orders with ChangeNotifier {
   }
 
   final String _authToken;
+  String _userId;
 
-  Orders(this._authToken, this._orders);
+  Orders(this._authToken, this._userId, this._orders);
 
   void addOrder(List<CartItem> cartItems, double total) async {
     try {
-      var params = {
-      'auth': _authToken,
-      };
-      print(_authToken);
-      final url = Uri.https(
-          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-          '/orders.json', params);
+      
+      final url = Uri.parse(
+          'https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/orders/$_userId.json?auth=$_authToken');
 
       DateTime dt = DateTime.now();
       var response = await http.post(url,
@@ -86,25 +83,15 @@ class Orders with ChangeNotifier {
 
   Future<void> fetchOrders() async {
     try {
-      print(_authToken);
-      var params = {
-      'auth': _authToken,
-      };
-      final url = Uri.https(
-          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-          '/orders.json',
-          params
-          );
+      final url = Uri.parse(
+          'https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/orders/$_userId.json?auth=$_authToken');
       var response = await http.get(url);
       final data = json.decode(response.body);
-      print("WTF orders");
-      print("this is the data $data");
 
       List<OrderItem> orders = [];
 
     if (data != null) {
       data.forEach((key, prod) {
-        print(prod['products']);
         orders.add(OrderItem(
           id: key,
           amount: prod['amount'],

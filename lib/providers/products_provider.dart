@@ -7,8 +7,9 @@ import 'dart:convert';
 class ProductProvider with ChangeNotifier {
   List<Product> _products = [];
   String _authToken;
+  String _userId;
 
-  ProductProvider(this._authToken, this._products);
+  ProductProvider(this._authToken, this._userId, this._products);
 
   /*= [
     Product(
@@ -65,51 +66,45 @@ class ProductProvider with ChangeNotifier {
     notifyListeners();
   }*/
 
-  Future<void> fetchProducts() async {
-    //try {
-      var params = {
-      'auth': _authToken,
-      };
-      final url = Uri.https(
-          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-          '/products.json',
-          params
-          );
+  Future<void> fetchProducts([bool filterByUser = false]) async {
+    try {
+      String filterString = filterByUser ? 'orderBy="creatorId"equalTo="$_userId"' : '';
+      final url = Uri.parse('https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/products.json?auth=$_authToken&$filterString');
       var response = await http.get(url);
       final data = json.decode(response.body);
       List<Product> products = [];
       if (data == null) return;
-      data.forEach((key, prod) {
+      final urlOfFavorites = Uri.parse('https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/userFavorites/$_userId.json?auth=$_authToken');
+          var responseFav = await http.get(urlOfFavorites);
+          final favoriteData = json.decode(responseFav.body);
+      data.forEach((productId, productData) {
         products.add(Product(
-          id: key,
-          title: prod['title'],
-          description: prod['description'],
-          imageUrl: prod['imageUrl'],
-          price: prod['price'],
-          isFavourite: prod['isFavourite'],
+          id: productId,
+          title: productData['title'],
+          description: productData['description'],
+          imageUrl: productData['imageUrl'],
+          price: productData['price'],
+          isFavourite: favoriteData == null ? false : favoriteData[productId] ?? false,
         ));
       });
       _products = products;
       notifyListeners();
-    /*} catch (error) {
+    } catch (error) {
       return error;
-    }*/
+    }
   }
 
   Future<void> addProduct(Product product) async {
     try {
-      var params = {
-      'auth': _authToken,
-      };
-      final url = Uri.https(
-          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-          '/products.json', params);
+
+      final url = Uri.parse('https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/products.json?auth=$_authToken');
       var response = await http.post(url,
           body: json.encode({
             'description': product.description,
             'imageUrl': product.imageUrl,
             'price': product.price,
             'title': product.title,
+            'creatorId': _userId,
           }));
 
       var newProduct = Product(
@@ -129,13 +124,8 @@ class ProductProvider with ChangeNotifier {
   }
 
   Future<void> updateProduct(Product product) async{
-    var params = {
-      'auth': _authToken,
-      };
-    final url = Uri.https(
-          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-          '/products'
-          '/${product.id}.json', params);
+
+    final url = Uri.parse('https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/products/${product.id}.json?auth=$_authToken');
 
     try {
       await http.patch(url,
@@ -144,6 +134,7 @@ class ProductProvider with ChangeNotifier {
             'imageUrl': product.imageUrl,
             'price': product.price,
             'title': product.title,
+            'creatorId': _userId,
           }));
       final index = _products.indexWhere((element) => element.id == product.id);
       _products[index] = product;
@@ -157,13 +148,8 @@ class ProductProvider with ChangeNotifier {
   }
 
   void deleteProduct(String id) {
-    var params = {
-      'auth': _authToken,
-      };
-    final url = Uri.https(
-          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-          '/products'
-          '/$id.json', params);
+
+    final url = Uri.parse('https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/products/$id.json?auth=$_authToken');
 
     final index = _products.indexWhere((element) => element.id == id);
     var product = _products[index];

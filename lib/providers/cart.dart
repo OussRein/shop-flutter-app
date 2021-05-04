@@ -35,9 +35,10 @@ class Cart with ChangeNotifier {
   Map<String, CartItem> _items = {};
 
 
-  final String _authToken;
+  String _authToken;
 
   Cart(this._authToken, this._items);
+  
   Map<String, CartItem> get items {
     return _items;
   }
@@ -60,11 +61,9 @@ class Cart with ChangeNotifier {
       'auth': _authToken,
       };
       if (_items.containsKey(product.id)) {
-        final url = Uri.https(
-            'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-            '/cart'
-                '/${product.id}.json',params);
-
+        var url = Uri.parse(
+          'https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/cart/${product.id}.json?auth=$_authToken');
+        
         await http.patch(
           url,
           body: json.encode({
@@ -112,12 +111,9 @@ class Cart with ChangeNotifier {
     if (!_items.containsKey(id)) {
       return;
     }
-    var params = {
-      'auth': _authToken,
-      };
-    final url = Uri.https(
-        'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-        '/cart/$id.json', params);
+    var url = Uri.parse(
+          'https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/cart/$id.json?auth=$_authToken');
+        
 
     final cart = _items[id];
 
@@ -140,13 +136,9 @@ class Cart with ChangeNotifier {
     }
     
     if (_items[id].quantity > 1) {
-      var params = {
-      'auth': _authToken,
-      };
-      final url = Uri.https(
-          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-          '/cart/$id.json', params);
-
+      var url = Uri.parse(
+          'https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/cart/$id.json?auth=$_authToken');
+        
       final cart = _items[id];
 
       await http.patch(url,
@@ -172,14 +164,9 @@ class Cart with ChangeNotifier {
   void clear() {
     var cart = _items;
     try {
-      var params = {
-      'auth': _authToken,
-      };
       _items.forEach((key, value) {
-        var url = Uri.https(
-            'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-            '/cart'
-                '/${value.id}.json', params);
+        var url = Uri.parse(
+          'https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/cart/${value.id}.json?auth=$_authToken');
         http.delete(url);
       });
       _items = {};
@@ -193,20 +180,12 @@ class Cart with ChangeNotifier {
 
   Future<void> fetchCart() async {
     try {
-      var params = {
-      'auth': _authToken,
-      };
 
-      final url = Uri.https(
-          'shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app',
-          '/cart.json',
-          {
-      'auth': _authToken,
-      }
+      final url = Uri.parse(
+          'https://shopapp-b51c4-default-rtdb.europe-west1.firebasedatabase.app/cart.json?auth=$_authToken'
           );
       var response = await http.get(url);
       final data = json.decode(response.body) as Map<String, dynamic>;
-      print('This is the cart $data');
       Map<String, CartItem> cart = {};
       if (data != null) {
         data.forEach((key, prod) {
@@ -224,6 +203,7 @@ class Cart with ChangeNotifier {
       _items = cart;
       notifyListeners();
     } catch (error) {
+      print('This is the cart error');
       print(error.toString());
       return error;
     }

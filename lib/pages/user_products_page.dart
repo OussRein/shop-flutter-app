@@ -22,20 +22,25 @@ class UserProductPage extends StatelessWidget {
         ],
       ),
       drawer: AppDrawer(),
-      body: RefreshIndicator(
-        onRefresh: () { return Provider.of<ProductProvider>(context, listen: false).fetchProducts();},
-          child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: ListView.builder(
-            itemBuilder: (_, i) => Column(
-              children: [
-                UserProductItem(
-                    products.products[i].id, products.products[i].title, products.products[i].imageUrl),
-                Divider(),
-              ],
-            ),
-            itemCount: products.products.length,
+      body: FutureBuilder(
+        future: Provider.of<ProductProvider>(context, listen: false).fetchProducts(true),
+        builder:  (ctx, future) => RefreshIndicator(
+          onRefresh: () { return Provider.of<ProductProvider>(context, listen: false).fetchProducts(true);},
+            child: Consumer<ProductProvider>(
+            builder: (ctx, data, _ ) => Padding(
+              padding: const EdgeInsets.all(10),
+              child: ListView.builder(
+                itemBuilder: (_, i) => Column(
+                  children: [
+                    UserProductItem(
+                        products.products[i].id, products.products[i].title, products.products[i].imageUrl),
+                    Divider(),
+                  ],
+                ),
+                itemCount: products.products.length,
+              ),
           ),
+            ),
         ),
       ),
     );
